@@ -20,7 +20,7 @@ func WithdrawRoutes(r *gin.Engine) {
 		v1.GET("/withdraws", MainMiddleware, wrController.GetAllWithdrawReq)            //for admin
 		v1.GET("/withdraws/in_week", MainMiddleware, wrController.GetWithdrawReqInWeek) //for admin
 		v1.GET("/withdraws/:user_id", MainMiddleware, wrController.GetWithdrawReqByUser)
-		v1.PATCH("/withdraws/:id")                                      //update to approved
-		v1.POST("/withdraws", MainMiddleware, wrController.WithdrawReq) //create new withdraw (money, RO) for users
+		v1.PATCH("/withdraws/:id", MainMiddleware, wrController.PatchWithdrawReq) //update to approved
+		v1.POST("/withdraws", MainMiddleware, wrController.WithdrawReq)           //create new withdraw (money, RO) for users
 	}
 }

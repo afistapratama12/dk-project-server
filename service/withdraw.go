@@ -16,6 +16,8 @@ type (
 
 		WdReqRoBalance(input entity.WdReqInput) error
 		WdReqMoneyBalance(input entity.WdReqInput) error
+
+		ApproveWdReq(id string, input entity.UpdateWdReqApprove) error
 	}
 
 	wdService struct {
@@ -29,6 +31,10 @@ func NewWdService(wdRepo repository.WdRepo, userRepo repository.UserRepository) 
 		wdRepo:   wdRepo,
 		userRepo: userRepo,
 	}
+}
+
+func (s *wdService) ApproveWdReq(id string, input entity.UpdateWdReqApprove) error {
+	return s.wdRepo.ApproveWdReqById(id, input)
 }
 
 func (s *wdService) GetAllWdReq() ([]entity.WdReqDetail, error) {

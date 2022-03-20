@@ -21,6 +21,8 @@ type (
 
 		CreateWdReq(data entity.WdReqModel) error
 		UpdateWdReqByID(update entity.WdReqModel) error
+
+		ApproveWdReqById(id string, input entity.UpdateWdReqApprove) error
 	}
 
 	wdRepo struct {
@@ -210,6 +212,16 @@ func (r *wdRepo) UpdateWdReqByID(update entity.WdReqModel) error {
 		if err := r.db.Exec(query, time.Now(), false, update.MoneyBalance, update.RoBalance, update.RoMoneyBalance, update.Id).Error; err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (r *wdRepo) ApproveWdReqById(id string, input entity.UpdateWdReqApprove) error {
+	var query = "UPDATE withdraw_requests SET approved = ?, updated_at = ? WHERE id = ?"
+
+	if err := r.db.Exec(query, input.Approved, time.Now(), id).Error; err != nil {
+		return err
 	}
 
 	return nil

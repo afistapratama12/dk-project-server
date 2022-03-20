@@ -52,6 +52,10 @@ type WdReqInput struct {
 	RoBalance    int `json:"ro_balance"`
 }
 
+type UpdateWdReqApprove struct {
+	Approved bool `json:"approved" binding:"required"`
+}
+
 var (
 	BonusUser     = 2000
 	BonusJaringan = 3000

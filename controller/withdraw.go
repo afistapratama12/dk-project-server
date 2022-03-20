@@ -44,6 +44,44 @@ func (wc *wdController) GetAllWithdrawReq(c *gin.Context) {
 	c.JSON(200, res)
 }
 
+func (wc *wdController) PatchWithdrawReq(c *gin.Context) {
+	roleLogin, ok := c.Get("role")
+	if !ok {
+		c.JSON(401, utils.ErrorMessages(utils.ErrorUnauthorizeUser, errors.New("error user not login")))
+		return
+	}
+
+	if roleLogin.(string) != "admin" {
+		c.JSON(401, utils.ErrorMessages(utils.ErrorUnauthorizeUser, errors.New("user not admin")))
+		return
+	}
+
+	IdParam := c.Param("id")
+
+	if IdParam == "" {
+		c.JSON(400, utils.ErrorMessages(utils.ErrorBadRequest, errors.New("parameter not valid")))
+		return
+	}
+
+	var input entity.UpdateWdReqApprove
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, utils.ErrorMessages(utils.ErrorBadRequest, err))
+		return
+	}
+
+	err := wc.wdService.ApproveWdReq(IdParam, input)
+	if err != nil {
+		c.JSON(500, utils.ErrorMessages(utils.ErrorInternalServer, err))
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"message": fmt.Sprintf("success patch wd_req id : %s , approver: %t", IdParam, input.Approved),
+	})
+
+}
+
 func (wc *wdController) GetWithdrawReqInWeek(c *gin.Context) {
 	id, ok := c.Get("user_id")
 
