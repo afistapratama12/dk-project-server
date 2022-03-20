@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -19,9 +18,10 @@ type Config struct {
 func Conn() *gorm.DB {
 
 	var cred Config
-	err := godotenv.Load()
+	//TODO: godotenv disable
+	// err := godotenv.Load()
 
-	FailOnError(err, 24, "config/database.go")
+	// FailOnError(err, 24, "config/database.go")
 	cred.Username = os.Getenv("DB_USER")
 	cred.Password = os.Getenv("DB_PASS")
 	cred.Host = os.Getenv("DB_HOST")

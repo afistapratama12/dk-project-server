@@ -3,13 +3,13 @@ package config
 import (
 	"os"
 
-	"github.com/joho/godotenv"
 	"github.com/twilio/twilio-go"
 )
 
 func ClientWA() *twilio.RestClient {
-	err := godotenv.Load()
-	FailOnError(err, 12, "config/clientWA.go")
+	//TODO: godotenv disable
+	// err := godotenv.Load()
+	// FailOnError(err, 12, "config/clientWA.go")
 
 	accSID := os.Getenv("T_ACC_SID")
 	authToken := os.Getenv("T_AUTH_TOKEN")
