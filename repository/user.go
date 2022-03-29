@@ -55,7 +55,6 @@ func (r *userRepository) GetAllUsers() ([]entity.User, error) {
 }
 
 func (r *userRepository) CheckUserId(id int) ([]entity.User, error) {
-
 	var usersDownline []entity.User
 
 	idStr := strconv.Itoa(id)

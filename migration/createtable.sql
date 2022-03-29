@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `role` varchar(50) NOT NULL,
   `fullname` varchar(150) NOT NULL,
   `phone_number` varchar(50) NOT NULL,
-  `username` varchar(50) NOT NULL,
+  `username` varchar(50) NOT NULL UNIQUE,
   `password` varchar(50) NOT NULL,
   `parent_id` int,
   `position` set('left', 'center', 'right'),

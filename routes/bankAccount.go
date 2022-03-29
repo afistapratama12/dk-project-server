@@ -18,7 +18,7 @@ func BankAccountRoute(r *gin.Engine) {
 	v1 := r.Group("/v1")
 	{
 		v1.GET("/bank_account", MainMiddleware, baController.GetAllBankRecord)
-		v1.PUT("/bank_account", MainMiddleware, baController.UpdateBankRecord)
+		v1.PUT("/bank_account/:bank_acc_id", MainMiddleware, baController.UpdateBankRecord)
 		v1.POST("/bank_account", MainMiddleware, baController.InsertNewBankRecord)
 	}
 }
