@@ -12,7 +12,6 @@ type Config struct {
 	Username string
 	Password string
 	Host     string
-	Port     string
 	DBName   string
 }
 
@@ -27,9 +26,8 @@ func Conn() *gorm.DB {
 	cred.Password = os.Getenv("DB_PASS")
 	cred.Host = os.Getenv("DB_HOST")
 	cred.DBName = os.Getenv("DB_NAME")
-	cred.Port = os.Getenv("DB_PORT")
 
-	var dns = fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", cred.Username, cred.Password, cred.Host, cred.Port, cred.DBName)
+	var dns = fmt.Sprintf("%s:%s@tcp(%s:3306)/%s", cred.Username, cred.Password, cred.Host, cred.DBName)
 
 	db, err := gorm.Open(mysql.Open(dns), &gorm.Config{
 		PrepareStmt: true,
