@@ -20,6 +20,7 @@ func UserRoute(r *gin.Engine) {
 		v1.POST("/users/register", MainMiddleware, userController.Register)
 		v1.POST("/users/login", userController.Login)
 		v1.GET("/users", MainMiddleware, userController.GetAllUsers) // for admin
+		v1.GET("/users/by_user", MainMiddleware, userController.GetAllUsersForUserView)
 		v1.GET("/users/self", MainMiddleware, userController.GetUserId)
 		v1.GET("/users/downline/:id", MainMiddleware, userController.GetUserDownline)
 		v1.GET("/users/validate_token", MainMiddleware, userController.ValidateTokenUser)

@@ -14,6 +14,7 @@ type (
 	WdRepo interface {
 		GetAllWd() ([]entity.WdReqDetail, error)
 		GetAllWdInWeek() ([]entity.WdReqDetail, error)
+		GetWdById(id string) (entity.WithdrawRequest, error)
 
 		GetAllWdByUserID(userId int) ([]entity.WdReqModel, error)
 
@@ -36,7 +37,7 @@ func NewWdRepo(db *gorm.DB) *wdRepo {
 
 func (r *wdRepo) GetAllWd() ([]entity.WdReqDetail, error) {
 	var query = `SELECT 
-		wr.Id, 
+		wr.id, 
 		wr.money_balance, 
 		wr.ro_balance, 
 		wr.ro_money_balance,
@@ -65,7 +66,7 @@ func (r *wdRepo) GetAllWd() ([]entity.WdReqDetail, error) {
 
 func (r *wdRepo) GetAllWdInWeek() ([]entity.WdReqDetail, error) {
 	var query = `SELECT 
-		wr.Id, 
+		wr.id, 
 		wr.money_balance, 
 		wr.ro_balance, 
 		wr.ro_money_balance,
@@ -96,6 +97,16 @@ func (r *wdRepo) GetAllWdInWeek() ([]entity.WdReqDetail, error) {
 	}
 
 	return wdReqs, nil
+}
+
+func (r *wdRepo) GetWdById(id string) (entity.WithdrawRequest, error) {
+	var wdReq entity.WithdrawRequest
+
+	if err := r.db.Where("id = ?", id).Find(&wdReq).Error; err != nil {
+		return wdReq, err
+	}
+
+	return wdReq, nil
 }
 
 func (r *wdRepo) GetWdReqInWeekByUserID(userId int) (entity.WdReqModel, error) {

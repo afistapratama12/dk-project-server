@@ -10,7 +10,7 @@ import (
 
 var (
 	wrRepo       = repository.NewWdRepo(DB)
-	wrService    = service.NewWdService(wrRepo, userRepo)
+	wrService    = service.NewWdService(wrRepo, userRepo, tsRepo)
 	wrController = controller.NewWdController(wrService)
 )
 

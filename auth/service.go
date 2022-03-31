@@ -2,15 +2,14 @@ package auth
 
 import (
 	"errors"
-	"os"
 
 	"github.com/dgrijalva/jwt-go"
 )
 
 var (
 	//TODO: godotenv disable
-	// _   = godotenv.Load()
-	key = os.Getenv("JWT_SECRET")
+	// key = os.Getenv("JWT_SECRET")
+	key = "DK_project_web_app_2022"
 )
 
 type (

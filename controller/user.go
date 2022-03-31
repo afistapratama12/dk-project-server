@@ -68,6 +68,7 @@ func (uc *userController) Login(c *gin.Context) {
 
 func (uc *userController) Register(c *gin.Context) {
 	_, ok := c.Get("user_id")
+
 	if !ok {
 		c.JSON(401, utils.ErrorMessages(utils.ErrorUnauthorizeUser, errors.New("error user not login")))
 		return
@@ -89,6 +90,22 @@ func (uc *userController) Register(c *gin.Context) {
 	c.JSON(201, gin.H{
 		"message": "success register user",
 	})
+}
+
+func (uc *userController) GetAllUsersForUserView(c *gin.Context) {
+	idLogin, ok := c.Get("user_id")
+	if !ok {
+		c.JSON(401, utils.ErrorMessages(utils.ErrorUnauthorizeUser, errors.New("error user not login")))
+		return
+	}
+
+	users, err := uc.userService.GetAllUsersView(idLogin.(int))
+	if err != nil {
+		c.JSON(500, utils.ErrorMessages(utils.ErrorInternalServer, err))
+		return
+	}
+
+	c.JSON(200, users)
 }
 
 func (uc *userController) GetAllUsers(c *gin.Context) {

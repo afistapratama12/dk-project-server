@@ -15,6 +15,24 @@ type User struct {
 	MoneyBalance int    `json:"money_balance"`
 }
 
+type UserView struct {
+	Id       int    `json:"id"`
+	Fullname string `json:"fullname"`
+	Username string `json:"username"`
+	ParentId int    `json:"parent_id"`
+	Position string `json:"position"`
+}
+
+func (u *User) ToUserView() UserView {
+	return UserView{
+		Id:       u.Id,
+		Fullname: u.Fullname,
+		Username: u.Username,
+		ParentId: u.ParentId,
+		Position: u.Position,
+	}
+}
+
 type UserId struct {
 	Id int `json:"id"`
 }

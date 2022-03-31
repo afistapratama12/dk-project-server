@@ -11,6 +11,8 @@ type UserRepository interface {
 	GetuserId(id int) (entity.User, error)
 
 	GetAllUsers() ([]entity.User, error)
+	GetUserViews(id string) ([]entity.UserView, error)
+
 	CheckUserLogin(username string, pass string) (entity.User, error)
 
 	GetUsersByParentId(parentId string) ([]entity.User, error)
@@ -52,6 +54,23 @@ func (r *userRepository) GetAllUsers() ([]entity.User, error) {
 	}
 
 	return users, nil
+}
+
+func (r *userRepository) GetUserViews(id string) ([]entity.UserView, error) {
+	var userViews []entity.UserView
+	var users []entity.User
+
+	if err := r.db.Not("id = ?", id).Find(&users).Error; err != nil {
+		return userViews, err
+	}
+
+	for _, u := range users {
+		if u.Role == "user" {
+			userViews = append(userViews, u.ToUserView())
+		}
+	}
+
+	return userViews, nil
 }
 
 func (r *userRepository) CheckUserId(id int) ([]entity.User, error) {

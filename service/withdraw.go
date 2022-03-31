@@ -21,19 +21,52 @@ type (
 	}
 
 	wdService struct {
-		wdRepo   repository.WdRepo
-		userRepo repository.UserRepository
+		wdRepo    repository.WdRepo
+		userRepo  repository.UserRepository
+		transRepo repository.TransRepo
 	}
 )
 
-func NewWdService(wdRepo repository.WdRepo, userRepo repository.UserRepository) *wdService {
+func NewWdService(wdRepo repository.WdRepo, userRepo repository.UserRepository, transRepo repository.TransRepo) *wdService {
 	return &wdService{
-		wdRepo:   wdRepo,
-		userRepo: userRepo,
+		wdRepo:    wdRepo,
+		userRepo:  userRepo,
+		transRepo: transRepo,
 	}
 }
 
 func (s *wdService) ApproveWdReq(id string, input entity.UpdateWdReqApprove) error {
+	wdReq, err := s.wdRepo.GetWdById(id)
+	if err != nil {
+		return err
+	}
+
+	user, err := s.userRepo.GetuserId(wdReq.UserId)
+	if err != nil {
+		return err
+	}
+
+	// update the user money saldo, with total ro_money_balance ( ro money dan jaringan)
+	user.MoneyBalance += wdReq.RoMoneyBalance
+
+	err = s.userRepo.UpdateBalance(user)
+	if err != nil {
+		return err
+	}
+
+	newTrans := entity.TransInput{
+		FromId:       1,
+		ToId:         user.Id,
+		SASBalance:   0,
+		ROBalance:    0,
+		MoneyBalance: wdReq.RoMoneyBalance,
+	}
+
+	err = s.transRepo.InsertTrans(newTrans)
+	if err != nil {
+		return err
+	}
+
 	return s.wdRepo.ApproveWdReqById(id, input)
 }
 

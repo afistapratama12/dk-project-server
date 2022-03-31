@@ -6,6 +6,7 @@ import (
 	"dk-project-service/repository"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -15,6 +16,8 @@ type UserService interface {
 	GetUserId(input int) (entity.UserDetail, error)
 
 	GetAllUsers() ([]entity.User, error)
+	GetAllUsersView(id int) ([]entity.UserView, error)
+
 	Login(login entity.UserLogin) (entity.UserLoginResponse, error)
 	Register(reg entity.UserRegister) error
 
@@ -189,6 +192,11 @@ func (s *userService) Register(reg entity.UserRegister) error {
 
 func (s *userService) GetAllUsers() ([]entity.User, error) {
 	return s.userRepo.GetAllUsers()
+}
+
+func (s *userService) GetAllUsersView(id int) ([]entity.UserView, error) {
+	idStr := strconv.Itoa(id)
+	return s.userRepo.GetUserViews(idStr)
 }
 
 func (s *userService) GetUserDownline(input string) ([]entity.User, error) {

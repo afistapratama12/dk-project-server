@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"os"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -21,11 +20,10 @@ func Conn() *gorm.DB {
 	//TODO: godotenv disable
 	// err := godotenv.Load()
 
-	// FailOnError(err, 24, "config/database.go")
-	cred.Username = os.Getenv("DB_USER")
-	cred.Password = os.Getenv("DB_PASS")
-	cred.Host = os.Getenv("DB_HOST")
-	cred.DBName = os.Getenv("DB_NAME")
+	cred.Username = "u1656216_dk_project_admin"
+	cred.Password = "dk_project_admin_2022"
+	cred.Host = "srv143.niagahoster.com"
+	cred.DBName = "u1656216_dk_database_project"
 
 	var dns = fmt.Sprintf("%s:%s@tcp(%s:3306)/%s", cred.Username, cred.Password, cred.Host, cred.DBName)
 
