@@ -183,9 +183,11 @@ func (s *userService) Register(reg entity.UserRegister) error {
 		return err
 	}
 
-	// create send sms
-
 	// create send WA (concurrent)
+	err = s.userRepo.SendWARegister(createdUser)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

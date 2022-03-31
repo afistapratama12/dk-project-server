@@ -2,9 +2,17 @@ package repository
 
 import (
 	"dk-project-service/entity"
+	"dk-project-service/utils"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"log"
 	"strconv"
 
+	"github.com/twilio/twilio-go"
 	"gorm.io/gorm"
+
+	openapi "github.com/twilio/twilio-go/rest/api/v2010"
 )
 
 type UserRepository interface {
@@ -24,14 +32,18 @@ type UserRepository interface {
 
 	// for transaction
 	UpdateBalance(user entity.User) error
+
+	// send WA message credential
+	SendWARegister(user entity.User) error
 }
 
 type userRepository struct {
-	db *gorm.DB
+	db     *gorm.DB
+	client *twilio.RestClient
 }
 
-func NewUserRepository(db *gorm.DB) *userRepository {
-	return &userRepository{db: db}
+func NewUserRepository(db *gorm.DB, client *twilio.RestClient) *userRepository {
+	return &userRepository{db: db, client: client}
 }
 
 func (r *userRepository) GetuserId(id int) (entity.User, error) {
@@ -133,4 +145,28 @@ func (r *userRepository) GetUsersByParentId(parentId string) ([]entity.User, err
 	}
 
 	return users, nil
+}
+
+func (r *userRepository) SendWARegister(user entity.User) error {
+	var from = "+14155238886"
+
+	sendTo, ok := utils.NumberSend(user.PhoneNumber)
+	if !ok {
+		return errors.New("error number user invalid format")
+	}
+
+	params := &openapi.CreateMessageParams{}
+	params.SetTo(fmt.Sprintf("whatsapp:%s", sendTo))
+	params.SetFrom(fmt.Sprintf("whatsapp:%s", from))
+	params.SetBody(fmt.Sprintf("\nSelamat bergabung dengan DK, Berikut adalah username dan pin anda. Username : %s, Pin : %s", user.Username, user.Password))
+
+	resp, err := r.client.ApiV2010.CreateMessage(params)
+	if err != nil {
+		return err
+	}
+
+	response, _ := json.MarshalIndent(*resp, "", "\t")
+	log.Println("Response send WA :", string(response))
+
+	return nil
 }

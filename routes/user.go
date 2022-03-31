@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	userRepo       = repository.NewUserRepository(DB)
+	userRepo       = repository.NewUserRepository(DB, clientTwillio)
 	userService    = service.NewUserService(userRepo, authService, tsService)
 	userController = controller.NewUserController(userService)
 )
