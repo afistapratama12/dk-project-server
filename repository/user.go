@@ -11,7 +11,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/joho/godotenv"
 	"gorm.io/gorm"
 )
 
@@ -149,12 +148,10 @@ func (r *userRepository) GetUsersByParentId(parentId string) ([]entity.User, err
 func (r *userRepository) SendWARegister(user entity.User) (entity.WASendResponse, error) {
 	var cbResp entity.WASendResponse
 
-	log.Println("masuk send wa notif")
-
-	err := godotenv.Load()
-	if err != nil {
-		return cbResp, err
-	}
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	return cbResp, err
+	// }
 
 	msgReq := fmt.Sprintf("Selamat bergabung di DK, berikut adalah username dan pin anda. Username : %s, PIN / Password : %s \n\nCatatan: ini adalah data rahasia, mohon dijaga baik baik", user.Username, user.Password)
 
