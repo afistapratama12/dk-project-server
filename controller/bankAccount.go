@@ -21,7 +21,7 @@ func NewBankAccountController(bas service.BankAccountService) *bankAccountContro
 	return &bankAccountController{bas: bas}
 }
 
-func (bc *bankAccountController) GetAllBankRecord(c *gin.Context) {
+func (bc *bankAccountController) GetBankAccountUser(c *gin.Context) {
 	idLogin, ok := c.Get("user_id")
 
 	if !ok {

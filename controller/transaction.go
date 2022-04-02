@@ -57,6 +57,24 @@ func (tc *transactionController) NewRecord(c *gin.Context) {
 	})
 }
 
+func (tc *transactionController) GetAllTransByCategory(c *gin.Context) {
+	_, ok := c.Get("user_id")
+	if !ok {
+		c.JSON(401, utils.ErrorMessages(utils.ErrorUnauthorizeUser, errors.New("error user not login")))
+		return
+	}
+
+	cat := c.Param("category")
+
+	trans, err := tc.transService.GetByCategory(cat)
+	if err != nil {
+		c.JSON(500, utils.ErrorMessages(utils.ErrorInternalServer, err))
+		return
+	}
+
+	c.JSON(200, trans)
+}
+
 func (tc *transactionController) TransactionByUser(c *gin.Context) {
 	idLogin, ok := c.Get("user_id")
 
@@ -72,4 +90,82 @@ func (tc *transactionController) TransactionByUser(c *gin.Context) {
 	}
 
 	c.JSON(200, res)
+}
+
+func (tc *transactionController) BuySASToAdmin(c *gin.Context) {
+	_, ok := c.Get("user_id")
+
+	if !ok {
+		c.JSON(401, utils.ErrorMessages(utils.ErrorUnauthorizeUser, errors.New("error user not login")))
+		return
+	}
+
+	var input entity.BuySASAdminInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, utils.ErrorMessages(utils.ErrorBadRequest, err))
+		return
+	}
+
+	err := tc.transService.BuySASAdmin(input)
+	if err != nil {
+		c.JSON(500, utils.ErrorMessages(utils.ErrorInternalServer, err))
+		return
+	}
+
+	c.JSON(200, gin.H{"message": fmt.Sprintf("success buy SAS %d unit from admin to user %d", input.SASBalance, input.UserId)})
+}
+
+func (tc *transactionController) BuyROToAdmin(c *gin.Context) {
+	_, ok := c.Get("user_id")
+
+	if !ok {
+		c.JSON(401, utils.ErrorMessages(utils.ErrorUnauthorizeUser, errors.New("error user not login")))
+		return
+	}
+
+	var input entity.BuyROAdminInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, utils.ErrorMessages(utils.ErrorBadRequest, err))
+		return
+	}
+
+	err := tc.transService.BuyROAdmin(input)
+	if err != nil {
+		c.JSON(500, utils.ErrorMessages(utils.ErrorInternalServer, err))
+		return
+	}
+
+	c.JSON(200, gin.H{"message": fmt.Sprintf("success buy RO %d unit from admin to user %d", input.ROBalance, input.UserId)})
+}
+
+func (tc *transactionController) AddBalanceAdmin(c *gin.Context) {
+	_, ok := c.Get("user_id")
+	if !ok {
+		c.JSON(401, utils.ErrorMessages(utils.ErrorUnauthorizeUser, errors.New("error user not login")))
+		return
+	}
+	role, ok := c.Get("role")
+	if !ok {
+		c.JSON(401, utils.ErrorMessages(utils.ErrorUnauthorizeUser, errors.New("error user not login")))
+		return
+	}
+
+	if role.(string) != "admin" {
+		c.JSON(401, utils.ErrorMessages(utils.ErrorUnauthorizeUser, errors.New("user login not admin")))
+		return
+	}
+
+	var input entity.AddBalanceInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, utils.ErrorMessages(utils.ErrorBadRequest, err))
+		return
+	}
+
+	err := tc.transService.AddBalanceAdmin(input)
+	if err != nil {
+		c.JSON(500, utils.ErrorMessages(utils.ErrorInternalServer, err))
+		return
+	}
+
+	c.JSON(200, gin.H{"message": "success add balance to admin"})
 }

@@ -67,7 +67,7 @@ func (uc *userController) Login(c *gin.Context) {
 }
 
 func (uc *userController) Register(c *gin.Context) {
-	_, ok := c.Get("user_id")
+	idLogin, ok := c.Get("user_id")
 
 	if !ok {
 		c.JSON(401, utils.ErrorMessages(utils.ErrorUnauthorizeUser, errors.New("error user not login")))
@@ -81,7 +81,7 @@ func (uc *userController) Register(c *gin.Context) {
 		return
 	}
 
-	err := uc.userService.Register(input)
+	err := uc.userService.Register(idLogin.(int), input)
 	if err != nil {
 		c.JSON(500, utils.ErrorMessages(utils.ErrorInternalServer, err))
 		return

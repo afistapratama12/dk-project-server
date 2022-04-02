@@ -22,6 +22,8 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
+// category transaksi
+
 /*
 INFORMATION
 

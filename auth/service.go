@@ -5,11 +5,12 @@ import (
 	"os"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/joho/godotenv"
 )
 
 var (
 	//TODO: godotenv disable
-	// _   = godotenv.Load()
+	_   = godotenv.Load()
 	key = os.Getenv("JWT_SECRET")
 
 // key = "DK_project_web_app_2022"

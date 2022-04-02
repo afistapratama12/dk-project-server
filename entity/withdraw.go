@@ -56,12 +56,13 @@ type UpdateWdReqApprove struct {
 	Approved bool `json:"approved" binding:"required"`
 }
 
-var (
+const (
 	BonusUser     = 2000
 	BonusJaringan = 3000
+	BiayaAdmin    = 300
 )
 
-var ParseFormat = "2006-01-02 15:04:05"
+const ParseFormat = "2006-01-02 15:04:05"
 
 func (wr *WithdrawRequest) ToWdReqModel() (WdReqModel, error) {
 	var wdReq = WdReqModel{

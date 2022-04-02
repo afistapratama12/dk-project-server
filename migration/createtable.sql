@@ -27,9 +27,13 @@ CREATE TABLE IF NOT EXISTS `transactions` (
   `id` int NOT NULL AUTO_INCREMENT,
   `from_id` int NOT NULL,
   `to_id` int NOT NULL,
+  `description` varchar(255) NOT NULL, 
+  `category` varchar(100) NOT NULL,
   `sas_balance` int,
   `ro_balance` int,
   `money_balance` int,
+  `ro_money_balance` int,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 );
 

@@ -71,3 +71,10 @@ type UserLoginResponse struct {
 	ParentId    int    `json:"parent_id"`
 	Token       string `json:"auth_token"`
 }
+
+type SendWABody struct {
+	UserKey string `json:"userkey"`
+	PassKey string `json:"passkey"`
+	To      string `json:"to"`
+	Message string `json:"message"`
+}

@@ -3,6 +3,7 @@ package service
 import (
 	"dk-project-service/entity"
 	"dk-project-service/repository"
+	"errors"
 	"fmt"
 )
 
@@ -11,7 +12,16 @@ type (
 		NewRecord(input entity.TransInput) error
 		TransactionByUser(id int) ([]entity.Transaction, error)
 
+		InsertNewTrans(input entity.TransInput) error
+
 		NewDownline(inputUplineId int) error
+
+		BuySASAdmin(input entity.BuySASAdminInput) error
+		BuyROAdmin(input entity.BuyROAdminInput) error
+
+		AddBalanceAdmin(input entity.AddBalanceInput) error
+
+		GetByCategory(cat string) ([]entity.Transaction, error)
 	}
 
 	transService struct {
@@ -25,6 +35,14 @@ func NewTransService(tr repository.TransRepo, ur repository.UserRepository) *tra
 		transRepo: tr,
 		userRepo:  ur,
 	}
+}
+
+func (s *transService) GetByCategory(cat string) ([]entity.Transaction, error) {
+	return s.transRepo.GetByCategory(cat)
+}
+
+func (s *transService) InsertNewTrans(input entity.TransInput) error {
+	return s.transRepo.InsertTrans(input)
 }
 
 func (s *transService) NewRecord(input entity.TransInput) error {
@@ -41,24 +59,20 @@ func (s *transService) NewRecord(input entity.TransInput) error {
 	}
 
 	if input.SASBalance != 0 {
-		if userFrom.Role == "user" {
-			if userFrom.SASBalance == 0 {
-				return fmt.Errorf("error transaction, balance user %v, SASBalance : 0", input.FromId)
-			} else {
-				userFrom.SASBalance -= input.SASBalance
-			}
+		if userFrom.SASBalance == 0 {
+			return fmt.Errorf("error transaction, balance user %v, SASBalance : 0", input.FromId)
+		} else {
+			userFrom.SASBalance -= input.SASBalance
 		}
 
 		userTo.SASBalance += input.SASBalance
 	}
 
 	if input.ROBalance != 0 {
-		if userFrom.Role == "user" {
-			if userFrom.ROBalance == 0 {
-				return fmt.Errorf("error transaction, balance user %v, ROBalance 0", input.FromId)
-			} else {
-				userFrom.ROBalance -= input.ROBalance
-			}
+		if userFrom.ROBalance == 0 {
+			return fmt.Errorf("error transaction, balance user %v, ROBalance 0", input.FromId)
+		} else {
+			userFrom.ROBalance -= input.ROBalance
 		}
 
 		userTo.ROBalance += input.ROBalance
@@ -70,10 +84,22 @@ func (s *transService) NewRecord(input entity.TransInput) error {
 				return fmt.Errorf("error transaction, balance user %v, MoneyBalance 0", input.FromId)
 			} else {
 				userFrom.MoneyBalance -= input.MoneyBalance
+
+				err = s.transRepo.InsertTrans(entity.TransInput{
+					FromId:       input.FromId,
+					ToId:         1,
+					Category:     entity.TransCategoryAdminFee,
+					Description:  "biaya pengiriman saldo keuangan",
+					MoneyBalance: entity.BiayaAdmin,
+				})
+				if err != nil {
+					return err
+				}
 			}
 		}
 
-		userTo.MoneyBalance += input.MoneyBalance
+		userTo.MoneyBalance += (input.MoneyBalance - entity.BiayaAdmin)
+
 	}
 
 	err = s.userRepo.UpdateBalance(userFrom)
@@ -132,6 +158,8 @@ func (s *transService) NewDownline(inputUplineId int) error {
 				FromId:       1,
 				ToId:         user.Id,
 				MoneyBalance: getMoney,
+				Category:     entity.TransCategoryGeneral,
+				Description:  fmt.Sprintf("bonus penambahan downline baru untuk user : %s", user.Fullname),
 			}
 
 			err = s.transRepo.InsertTrans(transInput)
@@ -144,6 +172,163 @@ func (s *transService) NewDownline(inputUplineId int) error {
 		} else {
 			break
 		}
+	}
+
+	return nil
+}
+
+func (s *transService) BuySASAdmin(input entity.BuySASAdminInput) error {
+	admin, err := s.userRepo.GetuserId(1)
+	if err != nil {
+		return err
+	}
+
+	user, err := s.userRepo.GetuserId(input.UserId)
+	if err != nil {
+		return err
+	}
+
+	if admin.SASBalance < input.SASBalance {
+		return errors.New("admin SAS insufficient balance")
+	} else {
+		admin.SASBalance -= input.SASBalance
+
+		err := s.userRepo.UpdateBalance(admin)
+		if err != nil {
+			return err
+		}
+
+		user.SASBalance += input.SASBalance
+		user.MoneyBalance -= input.MoneyBalance
+
+		err = s.userRepo.UpdateBalance(user)
+		if err != nil {
+			return err
+		}
+
+		var transRecords []entity.TransInput
+
+		transRecords = append(transRecords, entity.TransInput{
+			FromId:       input.UserId,
+			ToId:         1,
+			Category:     entity.TransCategoryAdminFee,
+			Description:  "biaya admin pembelian SAS ke admin",
+			MoneyBalance: entity.BiayaAdmin,
+		})
+
+		transRecords = append(transRecords, entity.TransInput{
+			FromId:      1,
+			ToId:        input.UserId,
+			Category:    entity.TransCategorySAS,
+			Description: fmt.Sprintf("pembelian SAS untuk user : %s", user.Fullname),
+			SASBalance:  input.SASBalance,
+		})
+
+		err = s.transRepo.BulkInsertTrans(transRecords)
+		if err != nil {
+			return err
+		}
+
+	}
+	return nil
+
+}
+func (s *transService) BuyROAdmin(input entity.BuyROAdminInput) error {
+	admin, err := s.userRepo.GetuserId(1)
+	if err != nil {
+		return err
+	}
+
+	user, err := s.userRepo.GetuserId(input.UserId)
+	if err != nil {
+		return err
+	}
+
+	if admin.SASBalance < input.ROBalance {
+		return errors.New("admin RO insufficient balance")
+	} else {
+		admin.SASBalance -= input.ROBalance
+
+		err := s.userRepo.UpdateBalance(admin)
+		if err != nil {
+			return err
+		}
+
+		user.SASBalance += input.ROBalance
+		user.MoneyBalance -= input.MoneyBalance
+
+		err = s.userRepo.UpdateBalance(user)
+		if err != nil {
+			return err
+		}
+
+		var transRecord []entity.TransInput
+
+		transRecord = append(transRecord, entity.TransInput{
+			FromId:       input.UserId,
+			ToId:         1,
+			Category:     entity.TransCategoryAdminFee,
+			Description:  "biaya admin pembelian RO ke admin",
+			MoneyBalance: entity.BiayaAdmin,
+		})
+
+		transRecord = append(transRecord, entity.TransInput{
+			FromId:      1,
+			ToId:        input.UserId,
+			Category:    entity.TransCategoryRO,
+			Description: fmt.Sprintf("pembelian RO untuk user : %s", user.Fullname),
+			SASBalance:  input.ROBalance,
+		})
+
+		err = s.transRepo.BulkInsertTrans(transRecord)
+		if err != nil {
+			return err
+		}
+
+	}
+	return nil
+}
+
+func (s *transService) AddBalanceAdmin(input entity.AddBalanceInput) error {
+	admin, err := s.userRepo.GetuserId(1)
+	if err != nil {
+		return err
+	}
+
+	var transRecord []entity.TransInput
+
+	if input.ROBalance != 0 {
+		transRecord = append(transRecord, entity.TransInput{
+			FromId:      1,
+			ToId:        1,
+			Category:    entity.TransCategoryRO,
+			Description: fmt.Sprintf("tambah saldo RO admin %d unit", input.ROBalance),
+			ROBalance:   input.ROBalance,
+		})
+
+		admin.ROBalance += input.ROBalance
+	}
+
+	if input.SASBalance != 0 {
+		transRecord = append(transRecord, entity.TransInput{
+			FromId:      1,
+			ToId:        1,
+			Category:    entity.TransCategorySAS,
+			Description: fmt.Sprintf("tambah saldo SAS admin %d unit", input.SASBalance),
+			SASBalance:  input.SASBalance,
+		})
+
+		admin.SASBalance += input.SASBalance
+	}
+
+	err = s.userRepo.UpdateBalance(admin)
+	if err != nil {
+		return err
+	}
+
+	err = s.transRepo.BulkInsertTrans(transRecord)
+	if err != nil {
+		return err
 	}
 
 	return nil

@@ -4,6 +4,7 @@ import (
 	"dk-project-service/entity"
 	"dk-project-service/repository"
 	"fmt"
+	"log"
 	"strconv"
 )
 
@@ -105,7 +106,7 @@ func (s *wdService) WdReqMoneyBalance(input entity.WdReqInput) error {
 		}
 
 		if input.Moneybalance != 0 {
-			newWdReq.MoneyBalance = input.Moneybalance
+			newWdReq.MoneyBalance = (input.Moneybalance - entity.BiayaAdmin)
 		}
 
 		err = s.wdRepo.CreateWdReq(newWdReq)
@@ -113,12 +114,29 @@ func (s *wdService) WdReqMoneyBalance(input entity.WdReqInput) error {
 			return err
 		}
 	} else {
-		recordWdReqWeek.MoneyBalance += input.Moneybalance
+		recordWdReqWeek.MoneyBalance += (input.Moneybalance - entity.BiayaAdmin)
 
 		err = s.wdRepo.UpdateWdReqByID(recordWdReqWeek)
 		if err != nil {
 			return err
 		}
+	}
+
+	user, err := s.userRepo.GetuserId(input.UserId)
+	if err != nil {
+		return err
+	}
+
+	user.MoneyBalance -= input.Moneybalance
+
+	err = s.userRepo.UpdateBalance(user)
+	if err != nil {
+		return err
+	}
+
+	err = s.transRepo.InsertTrans(entity.TransInput{FromId: input.UserId, ToId: 1, Category: entity.TransCategoryAdminFee, MoneyBalance: entity.BiayaAdmin, Description: fmt.Sprintf("biaya admin penarikan saldo keuangan user id: %d", input.UserId)})
+	if err != nil {
+		return err
 	}
 
 	return nil
@@ -151,7 +169,7 @@ func (s *wdService) WdReqRoBalance(input entity.WdReqInput) error {
 	// a = 1, b = 0, c = 1
 	// a check c - b, a = 1, c = 1, c <= a kita dapat 3000
 
-	err = s.RoBonusNetworkUpline(input.UserId, recordWdReqWeek.RoBalance, input.RoBalance)
+	transRecord, err := s.RoBonusNetworkUpline(input.UserId, recordWdReqWeek.RoBalance, input.RoBalance)
 	if err != nil {
 		return err
 	}
@@ -161,13 +179,16 @@ func (s *wdService) WdReqRoBalance(input entity.WdReqInput) error {
 		return err
 	}
 
+	// total RO dan bonus dikurangi biaya admin 100
+	totalROMoney := (input.RoBalance * entity.BonusUser) - entity.BiayaAdmin
+
 	// Kalau nggk ada create baru dengan logic yang ada
 	if recordWdReqWeek.Id == 0 && recordWdReqWeek.UserId == 0 && recordWdReqWeek.BankAccId == 0 {
 		var newWdReq = entity.WdReqModel{
 			UserId:         input.UserId,
 			BankAccId:      input.BankAccId,
 			RoBalance:      input.RoBalance,
-			RoMoneyBalance: (input.RoBalance * entity.BonusUser) + getBonus,
+			RoMoneyBalance: totalROMoney + getBonus,
 			Approved:       false,
 		}
 
@@ -177,7 +198,7 @@ func (s *wdService) WdReqRoBalance(input entity.WdReqInput) error {
 		}
 	} else {
 		recordWdReqWeek.RoBalance += input.RoBalance
-		recordWdReqWeek.RoMoneyBalance += (input.RoBalance * entity.BonusUser) + getBonus
+		recordWdReqWeek.RoMoneyBalance += totalROMoney + getBonus
 
 		err = s.wdRepo.UpdateWdReqByID(recordWdReqWeek)
 		if err != nil {
@@ -185,26 +206,55 @@ func (s *wdService) WdReqRoBalance(input entity.WdReqInput) error {
 		}
 	}
 
+	//4 transaction
+	// biaya admin
+	transRecord = append(transRecord, entity.TransInput{
+		FromId: input.UserId,
+		ToId:   1, Category: entity.TransCategoryAdminFee,
+		MoneyBalance: entity.BiayaAdmin,
+		Description:  fmt.Sprintf("biaya admin penarikan RO dari user: %d", input.UserId),
+	})
+
+	// ro ke admin
+	transRecord = append(transRecord, entity.TransInput{FromId: input.UserId, ToId: 1, Category: entity.TransCategoryGeneral, ROBalance: input.RoBalance, Description: fmt.Sprintf("penarikan saldo RO dari user : %d", input.UserId)})
+
+	// admin kasih bonus ro money
+	transRecord = append(transRecord, entity.TransInput{FromId: 1, ToId: input.UserId, Category: entity.TransCategoryGeneral, ROMoneyBalance: totalROMoney, Description: fmt.Sprintf("penarikan saldo RO untuk user : %d", input.UserId)})
+
+	// dapat bonus jaringan
+	if getBonus != 0 {
+		transRecord = append(transRecord, entity.TransInput{FromId: 1, ToId: input.UserId, Category: entity.TransCategoryGeneral, ROMoneyBalance: getBonus, Description: fmt.Sprintf("Bonus jaringan match penarikan RO dari downline user : %d", input.UserId)})
+	}
+
+	err = s.transRepo.BulkInsertTrans(transRecord)
+	if err != nil {
+		log.Println("error inserting all transaction, wd RO user")
+		return err
+	}
+
 	return nil
 }
 
 // for update ro bonus jaringan upline
-func (s *wdService) RoBonusNetworkUpline(baseParentId int, inputRoAccumUser int, inputRoNowUser int) error {
+func (s *wdService) RoBonusNetworkUpline(baseParentId int, inputRoAccumUser int, inputRoNowUser int) ([]entity.TransInput, error) {
 	parentId := baseParentId
+
+	// for transaction bulk insert
+	var transRecords []entity.TransInput
 
 	// looping ke atas, bonus untuk upline
 	for {
 		// perlu 2 data
 		user, err := s.userRepo.GetuserId(parentId)
 		if err != nil {
-			fmt.Println("RoBonusNetworkUpline: error loop get data user parent bonus jaringan upline")
-			return err
+			log.Println("RoBonusNetworkUpline: error loop get data user parent bonus jaringan upline")
+			return transRecords, err
 		}
 
 		parentWdReqWeek, err := s.wdRepo.GetWdReqInWeekByUserID(user.ParentId)
 		if err != nil {
-			fmt.Println("RoBonusNetworkUpline: error loop bonus wd ro upline")
-			return err
+			log.Println("RoBonusNetworkUpline: error loop bonus wd ro upline")
+			return transRecords, err
 		}
 
 		if parentWdReqWeek.Id != 0 && parentWdReqWeek.UserId != 0 && parentWdReqWeek.BankAccId != 0 {
@@ -217,17 +267,25 @@ func (s *wdService) RoBonusNetworkUpline(baseParentId int, inputRoAccumUser int,
 				// ro upline dikurangi akum
 				roCheck -= roAccumUser
 
+				var bonusJaringan int
+
 				if roNowUser < roCheck {
 					parentWdReqWeek.RoMoneyBalance += (roNowUser * entity.BonusJaringan)
+					bonusJaringan += (roNowUser * entity.BonusJaringan)
 				} else if roCheck <= roNowUser {
 					parentWdReqWeek.RoMoneyBalance += (roCheck * entity.BonusJaringan)
+					bonusJaringan += (roCheck * entity.BonusJaringan)
 				}
 
 				err = s.wdRepo.UpdateWdReqByID(parentWdReqWeek)
 				if err != nil {
-					fmt.Println("RoBonusNetworkUpline: error UPDATE sql loop update wd ro upline")
-					return err
+					log.Println("RoBonusNetworkUpline: error UPDATE sql loop update wd ro upline")
+					return transRecords, err
 				}
+
+				log.Println("masuk trans 1 bonus upline RO")
+
+				transRecords = append(transRecords, entity.TransInput{FromId: 1, ToId: parentWdReqWeek.UserId, Category: entity.TransCategoryGeneral, Description: fmt.Sprintf("bonus jaringan penarikan RO downline untuk user : %d", parentWdReqWeek.UserId), ROMoneyBalance: bonusJaringan})
 			}
 		}
 
@@ -238,7 +296,7 @@ func (s *wdService) RoBonusNetworkUpline(baseParentId int, inputRoAccumUser int,
 		}
 	}
 
-	return nil
+	return transRecords, nil
 }
 
 // for get total bonus jaringan kita, dari check ke downline
@@ -254,7 +312,7 @@ func (s *wdService) GetTotalBonusNetworkDL(baseListId []int, inputRoAccumUser in
 		for _, dlId := range downlineCheckId {
 			allDownlineUser, err := s.userRepo.CheckUserId(dlId)
 			if err != nil {
-				fmt.Println("GetTotalBonusNetworkDL: query all downline (left, center, right) loop")
+				log.Println("GetTotalBonusNetworkDL: query all downline (left, center, right) loop")
 				return 0, err
 			}
 
@@ -266,7 +324,7 @@ func (s *wdService) GetTotalBonusNetworkDL(baseListId []int, inputRoAccumUser in
 				for _, dlUser := range allDownlineUser {
 					dlWdReqWeek, err := s.wdRepo.GetWdReqInWeekByUserID(dlUser.Id)
 					if err != nil {
-						fmt.Println("GetTotalBonusNetworkDL: error loop bonus wd ro downline fo us")
+						log.Println("GetTotalBonusNetworkDL: error loop bonus wd ro downline fo us")
 						return 0, err
 					}
 

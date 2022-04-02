@@ -19,7 +19,7 @@ type UserService interface {
 	GetAllUsersView(id int) ([]entity.UserView, error)
 
 	Login(login entity.UserLogin) (entity.UserLoginResponse, error)
-	Register(reg entity.UserRegister) error
+	Register(userAddId int, reg entity.UserRegister) error
 
 	GetUserDownline(input string) ([]entity.User, error)
 }
@@ -91,7 +91,7 @@ func (s *userService) Login(login entity.UserLogin) (entity.UserLoginResponse, e
 	return loginRes, err
 }
 
-func (s *userService) Register(reg entity.UserRegister) error {
+func (s *userService) Register(userAddId int, reg entity.UserRegister) error {
 	generateId := uuid.New().String()
 
 	parentCheck, err := s.userRepo.CheckUserId(reg.ParentId)
@@ -126,7 +126,7 @@ func (s *userService) Register(reg entity.UserRegister) error {
 	// }
 
 	//transaction for user, using SAS balance
-	parentUser, err := s.userRepo.GetuserId(reg.ParentId)
+	parentUser, err := s.userRepo.GetuserId(userAddId)
 	if err != nil {
 		return err
 	}
@@ -144,9 +144,11 @@ func (s *userService) Register(reg entity.UserRegister) error {
 		}
 
 		err = s.transService.NewRecord(entity.TransInput{
-			FromId:     parentUser.Id,
-			ToId:       1,
-			SASBalance: 1,
+			FromId:      parentUser.Id,
+			ToId:        1,
+			SASBalance:  1,
+			Category:    entity.TransCategoryGeneral,
+			Description: fmt.Sprintf("pendaftaran user: %s", reg.Fullname),
 		})
 		if err != nil {
 			return err
@@ -184,7 +186,18 @@ func (s *userService) Register(reg entity.UserRegister) error {
 	}
 
 	// create send WA (concurrent)
-	err = s.userRepo.SendWARegister(createdUser)
+	cbResp, err := s.userRepo.SendWARegister(createdUser)
+	if err != nil {
+		return err
+	}
+
+	err = s.transService.InsertNewTrans(entity.TransInput{
+		FromId:       1,
+		ToId:         1,
+		MoneyBalance: cbResp.Cost,
+		Category:     entity.TransCategoryGeneral,
+		Description:  fmt.Sprintf("notifikasi whatsapp ke user: %s", reg.Fullname),
+	})
 	if err != nil {
 		return err
 	}

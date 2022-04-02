@@ -10,5 +10,4 @@ var (
 	DB             = config.Conn()
 	authService    = auth.NewAuthService()
 	MainMiddleware = middleware.Middleware(authService)
-	clientTwillio  = config.ClientWA()
 )

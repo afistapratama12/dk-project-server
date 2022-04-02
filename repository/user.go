@@ -1,18 +1,18 @@
 package repository
 
 import (
+	"bytes"
 	"dk-project-service/entity"
-	"dk-project-service/utils"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
+	"os"
 	"strconv"
 
-	"github.com/twilio/twilio-go"
+	"github.com/joho/godotenv"
 	"gorm.io/gorm"
-
-	openapi "github.com/twilio/twilio-go/rest/api/v2010"
 )
 
 type UserRepository interface {
@@ -34,16 +34,15 @@ type UserRepository interface {
 	UpdateBalance(user entity.User) error
 
 	// send WA message credential
-	SendWARegister(user entity.User) error
+	SendWARegister(user entity.User) (entity.WASendResponse, error)
 }
 
 type userRepository struct {
-	db     *gorm.DB
-	client *twilio.RestClient
+	db *gorm.DB
 }
 
-func NewUserRepository(db *gorm.DB, client *twilio.RestClient) *userRepository {
-	return &userRepository{db: db, client: client}
+func NewUserRepository(db *gorm.DB) *userRepository {
+	return &userRepository{db: db}
 }
 
 func (r *userRepository) GetuserId(id int) (entity.User, error) {
@@ -147,26 +146,48 @@ func (r *userRepository) GetUsersByParentId(parentId string) ([]entity.User, err
 	return users, nil
 }
 
-func (r *userRepository) SendWARegister(user entity.User) error {
-	var from = "+14155238886"
+func (r *userRepository) SendWARegister(user entity.User) (entity.WASendResponse, error) {
+	var cbResp entity.WASendResponse
 
-	sendTo, ok := utils.NumberSend(user.PhoneNumber)
-	if !ok {
-		return errors.New("error number user invalid format")
-	}
+	log.Println("masuk send wa notif")
 
-	params := &openapi.CreateMessageParams{}
-	params.SetTo(fmt.Sprintf("whatsapp:%s", sendTo))
-	params.SetFrom(fmt.Sprintf("whatsapp:%s", from))
-	params.SetBody(fmt.Sprintf("\nSelamat bergabung dengan DK, Berikut adalah username dan pin anda. Username : %s, Pin : %s", user.Username, user.Password))
-
-	resp, err := r.client.ApiV2010.CreateMessage(params)
+	err := godotenv.Load()
 	if err != nil {
-		return err
+		return cbResp, err
 	}
 
-	response, _ := json.MarshalIndent(*resp, "", "\t")
-	log.Println("Response send WA :", string(response))
+	msgReq := fmt.Sprintf("Selamat bergabung di DK, berikut adalah username dan pin anda. Username : %s, PIN / Password : %s \n\nCatatan: ini adalah data rahasia, mohon dijaga baik baik", user.Username, user.Password)
 
-	return nil
+	reqBody := entity.SendWABody{
+		UserKey: os.Getenv("ZENZIVA_USER_KEY"),
+		PassKey: os.Getenv("ZENZIVA_PASS_KEY"),
+		To:      user.PhoneNumber,
+		Message: msgReq,
+	}
+
+	jsonReq, _ := json.Marshal(reqBody)
+
+	req, err := http.NewRequest("POST", "https://console.zenziva.net/wareguler/api/sendWA/", bytes.NewBuffer(jsonReq))
+	req.Header.Set("Content-Type", "application/json; charset=UTF-8")
+	if err != nil {
+		return cbResp, err
+	}
+
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return cbResp, err
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return cbResp, err
+	}
+
+	json.Unmarshal(body, &cbResp)
+
+	log.Println(string(body))
+
+	return cbResp, nil
 }
