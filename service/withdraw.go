@@ -179,6 +179,18 @@ func (s *wdService) WdReqRoBalance(input entity.WdReqInput) error {
 		return err
 	}
 
+	// update user repo
+	user, err := s.userRepo.GetuserId(input.UserId)
+	if err != nil {
+		return err
+	}
+
+	user.ROBalance -= input.RoBalance
+	err = s.userRepo.UpdateBalance(user)
+	if err != nil {
+		return err
+	}
+
 	// total RO dan bonus dikurangi biaya admin 100
 	totalROMoney := (input.RoBalance * entity.BonusUser) - entity.BiayaAdmin
 
