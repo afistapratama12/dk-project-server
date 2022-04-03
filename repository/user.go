@@ -28,12 +28,13 @@ type UserRepository interface {
 	CheckUserId(id int) ([]entity.User, error)
 	CreateUser(user entity.User) (entity.User, error)
 	UpdateUsername(user entity.User) error
+	UpdateUserById(user entity.User) error
 
 	// for transaction
 	UpdateBalance(user entity.User) error
 
 	// send WA message credential
-	SendWARegister(user entity.User) (entity.WASendResponse, error)
+	SendWANotification(user entity.User) (entity.WASendResponse, error)
 }
 
 type userRepository struct {
@@ -135,6 +136,18 @@ func (r *userRepository) UpdateBalance(user entity.User) error {
 	return nil
 }
 
+func (r *userRepository) UpdateUserById(user entity.User) error {
+	log.Println("lakukan edit")
+
+	if err := r.db.Exec("UPDATE users SET username = ?, password = ?, fullname = ?, phone_number = ? WHERE id = ?", user.Username, user.Password, user.Fullname, user.PhoneNumber, user.Id).Error; err != nil {
+		return err
+	}
+
+	log.Println("success edit")
+
+	return nil
+}
+
 func (r *userRepository) GetUsersByParentId(parentId string) ([]entity.User, error) {
 	var users []entity.User
 
@@ -145,7 +158,7 @@ func (r *userRepository) GetUsersByParentId(parentId string) ([]entity.User, err
 	return users, nil
 }
 
-func (r *userRepository) SendWARegister(user entity.User) (entity.WASendResponse, error) {
+func (r *userRepository) SendWANotification(user entity.User) (entity.WASendResponse, error) {
 	var cbResp entity.WASendResponse
 
 	// err := godotenv.Load()

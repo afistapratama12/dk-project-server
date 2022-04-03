@@ -228,7 +228,6 @@ func (s *transService) BuySASAdmin(input entity.BuySASAdminInput) error {
 		if err != nil {
 			return err
 		}
-
 	}
 	return nil
 

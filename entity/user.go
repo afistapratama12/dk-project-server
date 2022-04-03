@@ -72,6 +72,11 @@ type UserLoginResponse struct {
 	Token       string `json:"auth_token"`
 }
 
+type UserUpdateInput struct {
+	Fullname    string `json:"fullname"`
+	PhoneNumber string `json:"phone_number"`
+}
+
 type SendWABody struct {
 	UserKey string `json:"userkey"`
 	PassKey string `json:"passkey"`

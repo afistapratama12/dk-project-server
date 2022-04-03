@@ -24,5 +24,6 @@ func UserRoute(r *gin.Engine) {
 		v1.GET("/users/self", MainMiddleware, userController.GetUserId)
 		v1.GET("/users/downline/:id", MainMiddleware, userController.GetUserDownline)
 		v1.GET("/users/validate_token", MainMiddleware, userController.ValidateTokenUser)
+		v1.PUT("/users/:user_id", MainMiddleware, userController.UpdateUserById)
 	}
 }

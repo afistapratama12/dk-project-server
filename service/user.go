@@ -6,6 +6,7 @@ import (
 	"dk-project-service/repository"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 
@@ -22,6 +23,8 @@ type UserService interface {
 	Register(userAddId int, reg entity.UserRegister) error
 
 	GetUserDownline(input string) ([]entity.User, error)
+
+	UpdateUserById(userId int, input entity.UserUpdateInput) error
 }
 
 type userService struct {
@@ -186,20 +189,70 @@ func (s *userService) Register(userAddId int, reg entity.UserRegister) error {
 	}
 
 	// create send WA (concurrent)
-	cbResp, err := s.userRepo.SendWARegister(createdUser)
+	cbResp, err := s.userRepo.SendWANotification(createdUser)
 	if err != nil {
 		return err
 	}
 
-	err = s.transService.InsertNewTrans(entity.TransInput{
-		FromId:       1,
-		ToId:         1,
-		MoneyBalance: cbResp.Cost,
-		Category:     entity.TransCategoryGeneral,
-		Description:  fmt.Sprintf("notifikasi whatsapp ke user: %s", reg.Fullname),
-	})
+	if cbResp.MessageID != 0 && cbResp.Status != "" && cbResp.Cost != 0 {
+		err = s.transService.InsertNewTrans(entity.TransInput{
+			FromId:       1,
+			ToId:         1,
+			MoneyBalance: cbResp.Cost,
+			Category:     entity.TransCategoryGeneral,
+			Description:  fmt.Sprintf("notifikasi whatsapp ke user: %s", reg.Fullname),
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (s *userService) UpdateUserById(userId int, input entity.UserUpdateInput) error {
+	user, err := s.userRepo.GetuserId(userId)
 	if err != nil {
 		return err
+	}
+
+	if user.Id == 0 && user.Fullname == "" && user.PhoneNumber == "" {
+		return errors.New("user not found")
+	}
+
+	if user.Fullname != input.Fullname {
+		user.Fullname = input.Fullname
+		user.Username = fmt.Sprintf("DK-%d-%s", user.Id, strings.Split(input.Fullname, "")[0])
+	}
+
+	if user.PhoneNumber != input.PhoneNumber {
+		log.Println("masuk edit phone number dan password")
+		user.PhoneNumber = input.PhoneNumber
+		user.Password = input.PhoneNumber[len(input.PhoneNumber)-4:]
+	}
+
+	log.Println("edit user ke repo")
+	err = s.userRepo.UpdateUserById(user)
+	if err != nil {
+		return err
+	}
+
+	cbResp, err := s.userRepo.SendWANotification(user)
+	if err != nil {
+		return err
+	}
+
+	if cbResp.MessageID != 0 && cbResp.Status != "" && cbResp.Cost != 0 {
+		err = s.transService.InsertNewTrans(entity.TransInput{
+			FromId:       1,
+			ToId:         1,
+			MoneyBalance: cbResp.Cost,
+			Category:     entity.TransCategoryGeneral,
+			Description:  fmt.Sprintf("notifikasi whatsapp ke user: %s", input.Fullname),
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

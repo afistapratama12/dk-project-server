@@ -5,6 +5,7 @@ import (
 	"dk-project-service/service"
 	"dk-project-service/utils"
 	"errors"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -156,4 +157,54 @@ func (uc *userController) GetUserDownline(c *gin.Context) {
 	}
 
 	c.JSON(200, users)
+}
+
+func (uc *userController) UpdateUserById(c *gin.Context) {
+	_, ok := c.Get("user_id")
+	if !ok {
+		c.JSON(401, utils.ErrorMessages(utils.ErrorUnauthorizeUser, errors.New("error user not login")))
+		return
+	}
+
+	roleLogin, ok := c.Get("role")
+	if !ok {
+		c.JSON(401, utils.ErrorMessages(utils.ErrorUnauthorizeUser, errors.New("error user not login")))
+		return
+	}
+
+	if roleLogin.(string) != "admin" {
+		c.JSON(401, utils.ErrorMessages(utils.ErrorUnauthorizeUser, errors.New("error user login not admin")))
+		return
+	}
+
+	IdParam := c.Param("user_id")
+
+	if IdParam == "" {
+		c.JSON(400, utils.ErrorMessages(utils.ErrorBadRequest, errors.New("parameter not valid")))
+		return
+	}
+
+	var input entity.UserUpdateInput
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, utils.ErrorMessages(utils.ErrorBadRequest, err))
+		return
+	}
+
+	userId, err := strconv.Atoi(IdParam)
+	if err != nil {
+		c.JSON(400, utils.ErrorMessages(utils.ErrorBadRequest, errors.New("parameter not valid")))
+		return
+	}
+
+	err = uc.userService.UpdateUserById(userId, input)
+	if err != nil {
+		c.JSON(500, utils.ErrorMessages(utils.ErrorInternalServer, err))
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"message": "success update user",
+	})
+
 }
