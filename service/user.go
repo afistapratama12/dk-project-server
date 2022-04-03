@@ -134,6 +134,8 @@ func (s *userService) Register(userAddId int, reg entity.UserRegister) error {
 		return err
 	}
 
+	var transRecords []entity.TransInput
+
 	if parentUser.Role != "admin" {
 		if parentUser.SASBalance < 1 {
 			return errors.New("unsufficient sas balance (balance tidak cukup)")
@@ -146,16 +148,13 @@ func (s *userService) Register(userAddId int, reg entity.UserRegister) error {
 			return err
 		}
 
-		err = s.transService.NewRecord(entity.TransInput{
+		transRecords = append(transRecords, entity.TransInput{
 			FromId:      parentUser.Id,
 			ToId:        1,
 			SASBalance:  1,
 			Category:    entity.TransCategoryGeneral,
 			Description: fmt.Sprintf("pendaftaran user: %s", reg.Fullname),
 		})
-		if err != nil {
-			return err
-		}
 	}
 
 	var newUser entity.User
@@ -195,16 +194,18 @@ func (s *userService) Register(userAddId int, reg entity.UserRegister) error {
 	}
 
 	if cbResp.MessageID != 0 && cbResp.Status != "" && cbResp.Cost != 0 {
-		err = s.transService.InsertNewTrans(entity.TransInput{
+		transRecords = append(transRecords, entity.TransInput{
 			FromId:       1,
 			ToId:         1,
 			MoneyBalance: cbResp.Cost,
 			Category:     entity.TransCategoryGeneral,
 			Description:  fmt.Sprintf("notifikasi whatsapp ke user: %s", reg.Fullname),
 		})
-		if err != nil {
-			return err
-		}
+	}
+
+	err = s.transService.InsertBulkTrans(transRecords)
+	if err != nil {
+		return err
 	}
 
 	return nil

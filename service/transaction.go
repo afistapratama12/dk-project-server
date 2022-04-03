@@ -13,6 +13,7 @@ type (
 		TransactionByUser(id int) ([]entity.Transaction, error)
 
 		InsertNewTrans(input entity.TransInput) error
+		InsertBulkTrans(input []entity.TransInput) error
 
 		NewDownline(inputUplineId int) error
 
@@ -43,6 +44,10 @@ func (s *transService) GetByCategory(cat string) ([]entity.Transaction, error) {
 
 func (s *transService) InsertNewTrans(input entity.TransInput) error {
 	return s.transRepo.InsertTrans(input)
+}
+
+func (s *transService) InsertBulkTrans(input []entity.TransInput) error {
+	return s.transRepo.BulkInsertTrans(input)
 }
 
 func (s *transService) NewRecord(input entity.TransInput) error {
