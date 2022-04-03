@@ -251,14 +251,14 @@ func (s *transService) BuyROAdmin(input entity.BuyROAdminInput) error {
 	if admin.SASBalance < input.ROBalance {
 		return errors.New("admin RO insufficient balance")
 	} else {
-		admin.SASBalance -= input.ROBalance
+		admin.ROBalance -= input.ROBalance
 
 		err := s.userRepo.UpdateBalance(admin)
 		if err != nil {
 			return err
 		}
 
-		user.SASBalance += input.ROBalance
+		user.ROBalance += input.ROBalance
 		user.MoneyBalance -= input.MoneyBalance
 
 		err = s.userRepo.UpdateBalance(user)
