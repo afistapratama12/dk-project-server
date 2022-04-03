@@ -177,15 +177,15 @@ func (r *wdRepo) CreateWdReq(data entity.WdReqModel) error {
 
 	switch flag {
 	case "m":
-		if err := r.db.Exec(query, data.UserId, data.BankAccId, time.Now(), time.Now(), false, data.MoneyBalance).Error; err != nil {
+		if err := r.db.Exec(query, data.UserId, data.BankAccId, time.Now().Add(7*time.Hour), time.Now().Add(7*time.Hour), false, data.MoneyBalance).Error; err != nil {
 			return err
 		}
 	case "r":
-		if err := r.db.Exec(query, data.UserId, data.BankAccId, time.Now(), time.Now(), false, data.RoBalance, data.RoMoneyBalance).Error; err != nil {
+		if err := r.db.Exec(query, data.UserId, data.BankAccId, time.Now().Add(7*time.Hour), time.Now().Add(7*time.Hour), false, data.RoBalance, data.RoMoneyBalance).Error; err != nil {
 			return err
 		}
 	case "mr":
-		if err := r.db.Exec(query, data.UserId, data.BankAccId, time.Now(), time.Now(), false, data.MoneyBalance, data.RoBalance, data.RoMoneyBalance).Error; err != nil {
+		if err := r.db.Exec(query, data.UserId, data.BankAccId, time.Now().Add(7*time.Hour), time.Now().Add(7*time.Hour), false, data.MoneyBalance, data.RoBalance, data.RoMoneyBalance).Error; err != nil {
 			return err
 		}
 	}
@@ -212,15 +212,15 @@ func (r *wdRepo) UpdateWdReqByID(update entity.WdReqModel) error {
 
 	switch flag {
 	case "m":
-		if err := r.db.Exec(query, time.Now(), false, update.MoneyBalance, update.Id).Error; err != nil {
+		if err := r.db.Exec(query, time.Now().Add(7*time.Hour), false, update.MoneyBalance, update.Id).Error; err != nil {
 			return err
 		}
 	case "r":
-		if err := r.db.Exec(query, time.Now(), false, update.RoBalance, update.RoMoneyBalance, update.Id).Error; err != nil {
+		if err := r.db.Exec(query, time.Now().Add(7*time.Hour), false, update.RoBalance, update.RoMoneyBalance, update.Id).Error; err != nil {
 			return err
 		}
 	case "mr":
-		if err := r.db.Exec(query, time.Now(), false, update.MoneyBalance, update.RoBalance, update.RoMoneyBalance, update.Id).Error; err != nil {
+		if err := r.db.Exec(query, time.Now().Add(7*time.Hour), false, update.MoneyBalance, update.RoBalance, update.RoMoneyBalance, update.Id).Error; err != nil {
 			return err
 		}
 	}
