@@ -66,7 +66,7 @@ func (s *transService) NewRecord(input entity.TransInput) error {
 	var transRecords []entity.TransInput
 
 	if input.SASBalance != 0 {
-		if userFrom.SASBalance == 0 {
+		if userFrom.SASBalance == 0 || userFrom.SASBalance < input.SASBalance {
 			return fmt.Errorf("error transaction, balance user %v, SASBalance : 0", input.FromId)
 		} else {
 			userFrom.SASBalance -= input.SASBalance
@@ -76,7 +76,7 @@ func (s *transService) NewRecord(input entity.TransInput) error {
 	}
 
 	if input.ROBalance != 0 {
-		if userFrom.ROBalance == 0 {
+		if userFrom.ROBalance == 0 || userFrom.ROBalance < input.ROBalance {
 			return fmt.Errorf("error transaction, balance user %v, ROBalance 0", input.FromId)
 		} else {
 			userFrom.ROBalance -= input.ROBalance
@@ -87,7 +87,7 @@ func (s *transService) NewRecord(input entity.TransInput) error {
 
 	if input.MoneyBalance != 0 {
 		if userFrom.Role == "user" {
-			if userFrom.MoneyBalance == 0 {
+			if userFrom.MoneyBalance == 0 || userFrom.MoneyBalance < input.MoneyBalance {
 				return fmt.Errorf("error transaction, balance user %v, MoneyBalance 0", input.FromId)
 			} else {
 				userFrom.MoneyBalance -= input.MoneyBalance
@@ -214,13 +214,14 @@ func (s *transService) BuySASAdmin(input entity.BuySASAdminInput) error {
 
 		var transRecords []entity.TransInput
 
-		transRecords = append(transRecords, entity.TransInput{
-			FromId:       input.UserId,
-			ToId:         1,
-			Category:     entity.TransCategoryAdminFee,
-			Description:  "biaya admin pembelian SAS ke admin",
-			MoneyBalance: entity.BiayaAdmin,
-		})
+		// biaya admin dihapus
+		// transRecords = append(transRecords, entity.TransInput{
+		// 	FromId:       input.UserId,
+		// 	ToId:         1,
+		// 	Category:     entity.TransCategoryAdminFee,
+		// 	Description:  "biaya admin pembelian SAS ke admin",
+		// 	MoneyBalance: entity.BiayaAdmin,
+		// })
 
 		transRecords = append(transRecords, entity.TransInput{
 			FromId:      1,
@@ -269,13 +270,14 @@ func (s *transService) BuyROAdmin(input entity.BuyROAdminInput) error {
 
 		var transRecord []entity.TransInput
 
-		transRecord = append(transRecord, entity.TransInput{
-			FromId:       input.UserId,
-			ToId:         1,
-			Category:     entity.TransCategoryAdminFee,
-			Description:  "biaya admin pembelian RO ke admin",
-			MoneyBalance: entity.BiayaAdmin,
-		})
+		// biaya admin dihapus
+		// transRecord = append(transRecord, entity.TransInput{
+		// 	FromId:       input.UserId,
+		// 	ToId:         1,
+		// 	Category:     entity.TransCategoryAdminFee,
+		// 	Description:  "biaya admin pembelian RO ke admin",
+		// 	MoneyBalance: entity.BiayaAdmin,
+		// })
 
 		transRecord = append(transRecord, entity.TransInput{
 			FromId:      1,
