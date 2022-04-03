@@ -159,7 +159,7 @@ func (s *transService) NewDownline(inputUplineId int) error {
 				ToId:         user.Id,
 				MoneyBalance: getMoney,
 				Category:     entity.TransCategoryGeneral,
-				Description:  fmt.Sprintf("bonus penambahan downline baru untuk user : %s", user.Fullname),
+				Description:  fmt.Sprintf("bonus penambahan downline baru untuk : %s", user.Fullname),
 			}
 
 			err = s.transRepo.InsertTrans(transInput)

@@ -209,21 +209,40 @@ func (s *wdService) WdReqRoBalance(input entity.WdReqInput) error {
 	//4 transaction
 	// biaya admin
 	transRecord = append(transRecord, entity.TransInput{
-		FromId: input.UserId,
-		ToId:   1, Category: entity.TransCategoryAdminFee,
+		FromId:       input.UserId,
+		ToId:         1,
+		Category:     entity.TransCategoryAdminFee,
 		MoneyBalance: entity.BiayaAdmin,
-		Description:  fmt.Sprintf("biaya admin penarikan RO dari user: %d", input.UserId),
+		Description:  "biaya admin penarikan RO",
 	})
 
 	// ro ke admin
-	transRecord = append(transRecord, entity.TransInput{FromId: input.UserId, ToId: 1, Category: entity.TransCategoryGeneral, ROBalance: input.RoBalance, Description: fmt.Sprintf("penarikan saldo RO dari user : %d", input.UserId)})
+	transRecord = append(transRecord, entity.TransInput{
+		FromId:      input.UserId,
+		ToId:        1,
+		Category:    entity.TransCategoryGeneral,
+		ROBalance:   input.RoBalance,
+		Description: "kirim saldo RO untuk penarikan",
+	})
 
 	// admin kasih bonus ro money
-	transRecord = append(transRecord, entity.TransInput{FromId: 1, ToId: input.UserId, Category: entity.TransCategoryGeneral, ROMoneyBalance: totalROMoney, Description: fmt.Sprintf("penarikan saldo RO untuk user : %d", input.UserId)})
+	transRecord = append(transRecord, entity.TransInput{
+		FromId:         1,
+		ToId:           input.UserId,
+		Category:       entity.TransCategoryGeneral,
+		ROMoneyBalance: totalROMoney,
+		Description:    "konversi saldo RO menjadi keuangan",
+	})
 
 	// dapat bonus jaringan
 	if getBonus != 0 {
-		transRecord = append(transRecord, entity.TransInput{FromId: 1, ToId: input.UserId, Category: entity.TransCategoryGeneral, ROMoneyBalance: getBonus, Description: fmt.Sprintf("Bonus jaringan match penarikan RO dari downline user : %d", input.UserId)})
+		transRecord = append(transRecord, entity.TransInput{
+			FromId:         1,
+			ToId:           input.UserId,
+			Category:       entity.TransCategoryGeneral,
+			ROMoneyBalance: getBonus,
+			Description:    "Bonus jaringan match penarikan RO dari downline",
+		})
 	}
 
 	err = s.transRepo.BulkInsertTrans(transRecord)
@@ -283,9 +302,12 @@ func (s *wdService) RoBonusNetworkUpline(baseParentId int, inputRoAccumUser int,
 					return transRecords, err
 				}
 
-				log.Println("masuk trans 1 bonus upline RO")
-
-				transRecords = append(transRecords, entity.TransInput{FromId: 1, ToId: parentWdReqWeek.UserId, Category: entity.TransCategoryGeneral, Description: fmt.Sprintf("bonus jaringan penarikan RO downline untuk user : %d", parentWdReqWeek.UserId), ROMoneyBalance: bonusJaringan})
+				transRecords = append(transRecords, entity.TransInput{
+					FromId:         1,
+					ToId:           parentWdReqWeek.UserId,
+					Category:       entity.TransCategoryGeneral,
+					Description:    "bonus jaringan penarikan RO downline",
+					ROMoneyBalance: bonusJaringan})
 			}
 		}
 
