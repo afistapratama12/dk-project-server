@@ -3,7 +3,6 @@ package service
 import (
 	"dk-project-service/entity"
 	"dk-project-service/repository"
-	"fmt"
 	"log"
 	"strconv"
 )
@@ -106,7 +105,7 @@ func (s *wdService) WdReqMoneyBalance(input entity.WdReqInput) error {
 		}
 
 		if input.Moneybalance != 0 {
-			newWdReq.MoneyBalance = (input.Moneybalance - entity.BiayaAdmin)
+			newWdReq.MoneyBalance = input.Moneybalance //(input.Moneybalance - entity.BiayaAdmin)
 		}
 
 		err = s.wdRepo.CreateWdReq(newWdReq)
@@ -114,7 +113,7 @@ func (s *wdService) WdReqMoneyBalance(input entity.WdReqInput) error {
 			return err
 		}
 	} else {
-		recordWdReqWeek.MoneyBalance += (input.Moneybalance - entity.BiayaAdmin)
+		recordWdReqWeek.MoneyBalance += input.Moneybalance //(input.Moneybalance - entity.BiayaAdmin)
 
 		err = s.wdRepo.UpdateWdReqByID(recordWdReqWeek)
 		if err != nil {
@@ -134,10 +133,20 @@ func (s *wdService) WdReqMoneyBalance(input entity.WdReqInput) error {
 		return err
 	}
 
-	err = s.transRepo.InsertTrans(entity.TransInput{FromId: input.UserId, ToId: 1, Category: entity.TransCategoryAdminFee, MoneyBalance: entity.BiayaAdmin, Description: fmt.Sprintf("biaya admin penarikan saldo keuangan user id: %d", input.UserId)})
-	if err != nil {
-		return err
-	}
+	// biaya admin dihapus
+	// err = s.transRepo.InsertTrans(entity.TransInput{FromId: input.UserId, ToId: 1, Category: entity.TransCategoryAdminFee, MoneyBalance: entity.BiayaAdmin, Description: fmt.Sprintf("biaya admin penarikan saldo keuangan user id: %d", input.UserId)})
+
+	// pengiriman saldo ke admin
+	// err = s.transRepo.InsertTrans(entity.TransInput{
+	// 	FromId: input.UserId,
+	// 	ToId: 1,
+	// 	Category: entity.TransCategoryGeneral,
+	// 	MoneyBalance: input.Moneybalance,
+	// 	Description: "pengajuan pencairan",
+	// })
+	// if err != nil {
+	// 	return err
+	// }
 
 	return nil
 }
@@ -191,8 +200,9 @@ func (s *wdService) WdReqRoBalance(input entity.WdReqInput) error {
 		return err
 	}
 
-	// total RO dan bonus dikurangi biaya admin 100
-	totalROMoney := (input.RoBalance * entity.BonusUser) - entity.BiayaAdmin
+	// total RO dan bonus
+	// biaya admin dihapus
+	totalROMoney := input.RoBalance * entity.BonusUser //- entity.BiayaAdmin
 
 	// Kalau nggk ada create baru dengan logic yang ada
 	if recordWdReqWeek.Id == 0 && recordWdReqWeek.UserId == 0 && recordWdReqWeek.BankAccId == 0 {
@@ -218,15 +228,15 @@ func (s *wdService) WdReqRoBalance(input entity.WdReqInput) error {
 		}
 	}
 
-	//4 transaction
-	// biaya admin
-	transRecord = append(transRecord, entity.TransInput{
-		FromId:       input.UserId,
-		ToId:         1,
-		Category:     entity.TransCategoryAdminFee,
-		MoneyBalance: entity.BiayaAdmin,
-		Description:  "biaya admin penarikan RO",
-	})
+	// 3 transaction
+	// biaya admin dihapus
+	// transRecord = append(transRecord, entity.TransInput{
+	// 	FromId:       input.UserId,
+	// 	ToId:         1,
+	// 	Category:     entity.TransCategoryAdminFee,
+	// 	MoneyBalance: entity.BiayaAdmin,
+	// 	Description:  "biaya admin penarikan RO",
+	// })
 
 	// ro ke admin
 	transRecord = append(transRecord, entity.TransInput{

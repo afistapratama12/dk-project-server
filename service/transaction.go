@@ -63,6 +63,8 @@ func (s *transService) NewRecord(input entity.TransInput) error {
 		return err
 	}
 
+	var transRecords []entity.TransInput
+
 	if input.SASBalance != 0 {
 		if userFrom.SASBalance == 0 {
 			return fmt.Errorf("error transaction, balance user %v, SASBalance : 0", input.FromId)
@@ -90,16 +92,13 @@ func (s *transService) NewRecord(input entity.TransInput) error {
 			} else {
 				userFrom.MoneyBalance -= input.MoneyBalance
 
-				err = s.transRepo.InsertTrans(entity.TransInput{
+				transRecords = append(transRecords, entity.TransInput{
 					FromId:       input.FromId,
 					ToId:         1,
 					Category:     entity.TransCategoryAdminFee,
 					Description:  "biaya pengiriman saldo keuangan",
 					MoneyBalance: entity.BiayaAdmin,
 				})
-				if err != nil {
-					return err
-				}
 			}
 		}
 
@@ -119,7 +118,9 @@ func (s *transService) NewRecord(input entity.TransInput) error {
 		return err
 	}
 
-	err = s.transRepo.InsertTrans(input)
+	transRecords = append(transRecords, input)
+
+	err = s.transRepo.BulkInsertTrans(transRecords)
 	if err != nil {
 		fmt.Println("error inserting transaction, NewRecord, line 79")
 		return err
