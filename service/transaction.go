@@ -284,7 +284,7 @@ func (s *transService) BuyROAdmin(input entity.BuyROAdminInput) error {
 			ToId:        input.UserId,
 			Category:    entity.TransCategoryRO,
 			Description: fmt.Sprintf("pembelian RO untuk user : %s", user.Fullname),
-			SASBalance:  input.ROBalance,
+			ROBalance:   input.ROBalance,
 		})
 
 		err = s.transRepo.BulkInsertTrans(transRecord)
