@@ -105,7 +105,7 @@ func (s *wdService) WdReqMoneyBalance(input entity.WdReqInput) error {
 		}
 
 		if input.Moneybalance != 0 {
-			newWdReq.MoneyBalance = input.Moneybalance //(input.Moneybalance - entity.BiayaAdmin)
+			newWdReq.MoneyBalance = (input.Moneybalance - entity.BiayaAdmin)
 		}
 
 		err = s.wdRepo.CreateWdReq(newWdReq)
@@ -113,7 +113,7 @@ func (s *wdService) WdReqMoneyBalance(input entity.WdReqInput) error {
 			return err
 		}
 	} else {
-		recordWdReqWeek.MoneyBalance += input.Moneybalance //(input.Moneybalance - entity.BiayaAdmin)
+		recordWdReqWeek.MoneyBalance += (input.Moneybalance - entity.BiayaAdmin)
 
 		err = s.wdRepo.UpdateWdReqByID(recordWdReqWeek)
 		if err != nil {
@@ -133,8 +133,13 @@ func (s *wdService) WdReqMoneyBalance(input entity.WdReqInput) error {
 		return err
 	}
 
-	// biaya admin dihapus
-	// err = s.transRepo.InsertTrans(entity.TransInput{FromId: input.UserId, ToId: 1, Category: entity.TransCategoryAdminFee, MoneyBalance: entity.BiayaAdmin, Description: fmt.Sprintf("biaya admin penarikan saldo keuangan user id: %d", input.UserId)})
+	err = s.transRepo.InsertTrans(entity.TransInput{
+		FromId:       input.UserId,
+		ToId:         1,
+		Category:     entity.TransCategoryAdminFee,
+		MoneyBalance: entity.BiayaAdmin,
+		Description:  "biaya admin penarikan saldo keuangan",
+	})
 
 	// pengiriman saldo ke admin
 	// err = s.transRepo.InsertTrans(entity.TransInput{
@@ -144,9 +149,9 @@ func (s *wdService) WdReqMoneyBalance(input entity.WdReqInput) error {
 	// 	MoneyBalance: input.Moneybalance,
 	// 	Description: "pengajuan pencairan",
 	// })
-	// if err != nil {
-	// 	return err
-	// }
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
