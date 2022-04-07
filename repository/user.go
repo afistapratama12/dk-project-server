@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/joho/godotenv"
 	"gorm.io/gorm"
 )
 
@@ -76,9 +77,7 @@ func (r *userRepository) GetUserViews(id string) ([]entity.UserView, error) {
 	}
 
 	for _, u := range users {
-		if u.Role == "user" {
-			userViews = append(userViews, u.ToUserView())
-		}
+		userViews = append(userViews, u.ToUserView())
 	}
 
 	return userViews, nil
@@ -161,7 +160,7 @@ func (r *userRepository) GetUsersByParentId(parentId string) ([]entity.User, err
 func (r *userRepository) SendWANotification(user entity.User) (entity.WASendResponse, error) {
 	var cbResp entity.WASendResponse
 
-	// err := godotenv.Load()
+	_ = godotenv.Load()
 	// if err != nil {
 	// 	return cbResp, err
 	// }
