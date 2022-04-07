@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -20,8 +19,8 @@ func Conn() *gorm.DB {
 
 	var cred Config
 	//TODO: godotenv disable
-	err := godotenv.Load()
-	FailOnError(err, 23, "database.go")
+	// err := godotenv.Load()
+	// FailOnError(err, 23, "database.go")
 
 	// cred.Username = "u1656216_dk_project_admin"
 	// cred.Password = "dk_project_admin_2022"
