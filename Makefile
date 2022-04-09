@@ -10,3 +10,7 @@ create_admin_data:
 	go run migration/migrate.go create_admin_data
 scenarion_ro_wd:
 	go run migration/migrate.go scenarion_ro_wd
+push_main:
+	git add -A
+	git commit -m "fix"
+	git push origin main
