@@ -72,7 +72,7 @@ func (s *transService) NewRecord(input entity.TransInput) error {
 
 	if input.SASBalance != 0 {
 		if userFrom.SASBalance == 0 || userFrom.SASBalance < input.SASBalance {
-			return fmt.Errorf("error transaction, balance user %v, SASBalance : 0", input.FromId)
+			return fmt.Errorf("error data transaction, balance user %v, SASBalance : 0", input.FromId)
 		} else {
 			userFrom.SASBalance -= input.SASBalance
 		}
